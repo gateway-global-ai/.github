@@ -393,4 +393,4 @@ export const devConfig = DevConfigSchema.parse({
 - [ ] Old repositories archived
 
 **Migration Start Date:** 2026-02-01  
-**Target Completion Date:** 2026-06-30
+**Target Completion Date:** To be confirmed based on detailed project planning and resource availability (reviewed quarterly)
