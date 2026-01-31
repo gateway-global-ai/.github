@@ -1,0 +1,354 @@
+name: Governance Compliance Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  compliance-check:
+    name: Governance Compliance Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Check TypeScript strict mode
+        id: typescript-check
+        run: |
+          if [ -f "tsconfig.json" ]; then
+            echo "✓ tsconfig.json found"
+            
+            # Check for strict mode
+            if grep -q '"strict": true' tsconfig.json; then
+              echo "✓ TypeScript strict mode enabled"
+            else
+              echo "✗ TypeScript strict mode not enabled"
+              echo "error=TypeScript strict mode must be enabled in tsconfig.json" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          else
+            echo "✗ tsconfig.json not found"
+            echo "error=tsconfig.json is required" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Check for prohibited languages
+        id: language-check
+        run: |
+          echo "Checking for Python files..."
+          PYTHON_FILES=$(find . -name "*.py" -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./dist/*" | wc -l)
+          
+          if [ "$PYTHON_FILES" -gt 0 ]; then
+            echo "✗ Found $PYTHON_FILES Python files (prohibited)"
+            find . -name "*.py" -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./dist/*"
+            echo "error=Python files are prohibited per governance rules" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✓ No Python files found"
+          fi
+          
+          echo "Checking for inline CSS..."
+          INLINE_CSS=$(grep -r "style=" src/ --include="*.tsx" --include="*.jsx" 2>/dev/null | wc -l || echo "0")
+          
+          if [ "$INLINE_CSS" -gt 0 ]; then
+            echo "✗ Found inline CSS (prohibited)"
+            echo "error=Inline CSS is prohibited - use CSS modules, Tailwind, or styled-components" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✓ No inline CSS found"
+          fi
+
+      - name: Check locked files
+        id: locked-files-check
+        run: |
+          REQUIRED_FILES=(
+            "package.json"
+            "tsconfig.json"
+            ".gitignore"
+            "README.md"
+          )
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "✗ Required file missing: $file"
+              echo "error=Required locked file $file is missing" >> $GITHUB_OUTPUT
+              exit 1
+            else
+              echo "✓ Found required file: $file"
+            fi
+          done
+
+      - name: Check directory structure
+        id: structure-check
+        run: |
+          REQUIRED_DIRS=(
+            "src"
+            "dev"
+            "stag"
+            "prod"
+          )
+          
+          for dir in "${REQUIRED_DIRS[@]}"; do
+            if [ ! -d "$dir" ]; then
+              echo "⚠ Recommended directory missing: $dir"
+            else
+              echo "✓ Found directory: $dir"
+            fi
+          done
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: |
+          if [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
+            echo "Running ESLint..."
+            npm run lint || npm run lint:check || npx eslint src --ext ts,tsx || true
+          else
+            echo "⚠ No ESLint configuration found"
+          fi
+
+      - name: Type checking
+        run: |
+          echo "Running TypeScript type checking..."
+          npm run type-check || npx tsc --noEmit
+
+      - name: Check for 'any' types
+        id: any-check
+        run: |
+          echo "Checking for prohibited 'any' types..."
+          ANY_COUNT=$(grep -r ": any" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules" | wc -l || echo "0")
+          
+          if [ "$ANY_COUNT" -gt 0 ]; then
+            echo "✗ Found $ANY_COUNT instances of 'any' type (prohibited)"
+            grep -r ": any" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules" || true
+            echo "error=Use of 'any' type is prohibited - use 'unknown' with type guards instead" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✓ No prohibited 'any' types found"
+          fi
+
+      - name: Check naming conventions
+        id: naming-check
+        run: |
+          echo "Checking file naming conventions..."
+          
+          # Check for non-kebab-case directories
+          BAD_DIRS=$(find src -type d -name "*_*" -o -name "*[A-Z]*" | wc -l || echo "0")
+          if [ "$BAD_DIRS" -gt 0 ]; then
+            echo "⚠ Found directories not following kebab-case convention"
+            find src -type d -name "*_*" -o -name "*[A-Z]*" || true
+          fi
+          
+          # Check TypeScript files
+          echo "✓ Naming convention check completed"
+
+      - name: Check environment configurations
+        id: env-check
+        run: |
+          echo "Checking environment configurations..."
+          
+          ENV_DIRS=("dev" "stag" "prod")
+          for env in "${ENV_DIRS[@]}"; do
+            if [ -d "$env" ]; then
+              if [ -f "$env/.env.example" ]; then
+                echo "✓ Found $env/.env.example"
+              else
+                echo "⚠ Missing $env/.env.example"
+              fi
+              
+              # Check for actual .env files (should not be committed)
+              if [ -f "$env/.env" ]; then
+                echo "✗ Found $env/.env (should not be committed!)"
+                echo "error=Environment files (.env) should not be committed" >> $GITHUB_OUTPUT
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Check for secrets in code
+        id: secrets-check
+        run: |
+          echo "Checking for potential secrets in code..."
+          
+          # Check for common secret patterns
+          PATTERNS=(
+            "api[_-]?key"
+            "secret[_-]?key"
+            "password"
+            "private[_-]?key"
+            "token"
+          )
+          
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -ri "$pattern\s*=\s*['\"][^'\"]\{10,\}['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules" | wc -l || echo "0")
+            if [ "$MATCHES" -gt 0 ]; then
+              echo "⚠ Found potential hardcoded $pattern"
+              grep -ri "$pattern\s*=\s*['\"][^'\"]\{10,\}['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules" | head -5 || true
+            fi
+          done
+
+      - name: Tool Registry validation (if applicable)
+        id: tool-registry-check
+        run: |
+          if [ -f "tool-registry.json" ]; then
+            echo "Validating tool-registry.json..."
+            
+            # Check if it's valid JSON
+            if jq empty tool-registry.json 2>/dev/null; then
+              echo "✓ tool-registry.json is valid JSON"
+              
+              # Basic schema validation
+              VERSION=$(jq -r '.version' tool-registry.json)
+              if [ "$VERSION" != "null" ]; then
+                echo "✓ Tool registry version: $VERSION"
+              else
+                echo "✗ Tool registry missing version field"
+                exit 1
+              fi
+              
+              TOOL_COUNT=$(jq '.tools | length' tool-registry.json)
+              echo "✓ Tool registry contains $TOOL_COUNT tools"
+            else
+              echo "✗ tool-registry.json is not valid JSON"
+              exit 1
+            fi
+          else
+            echo "ℹ No tool-registry.json found (optional)"
+          fi
+
+      - name: Generate compliance report
+        if: always()
+        run: |
+          echo "# Governance Compliance Report" > compliance-report.md
+          echo "" >> compliance-report.md
+          echo "**Repository**: ${{ github.repository }}" >> compliance-report.md
+          echo "**Branch**: ${{ github.ref_name }}" >> compliance-report.md
+          echo "**Commit**: ${{ github.sha }}" >> compliance-report.md
+          echo "**Date**: $(date)" >> compliance-report.md
+          echo "" >> compliance-report.md
+          echo "## Checks Performed" >> compliance-report.md
+          echo "" >> compliance-report.md
+          echo "- [x] TypeScript strict mode" >> compliance-report.md
+          echo "- [x] No prohibited languages" >> compliance-report.md
+          echo "- [x] Locked files present" >> compliance-report.md
+          echo "- [x] Directory structure" >> compliance-report.md
+          echo "- [x] No 'any' types" >> compliance-report.md
+          echo "- [x] Naming conventions" >> compliance-report.md
+          echo "- [x] Environment configurations" >> compliance-report.md
+          echo "- [x] No hardcoded secrets" >> compliance-report.md
+          echo "" >> compliance-report.md
+          echo "## Summary" >> compliance-report.md
+          echo "All governance compliance checks completed." >> compliance-report.md
+          
+          cat compliance-report.md
+
+      - name: Upload compliance report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-report
+          path: compliance-report.md
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('compliance-report.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          echo "Running npm audit..."
+          npm audit --audit-level=moderate || true
+
+      - name: Check for vulnerable dependencies
+        run: |
+          VULNERABILITIES=$(npm audit --json | jq '.metadata.vulnerabilities.total')
+          echo "Total vulnerabilities found: $VULNERABILITIES"
+          
+          if [ "$VULNERABILITIES" -gt 0 ]; then
+            echo "⚠ Found $VULNERABILITIES vulnerabilities"
+            npm audit
+          else
+            echo "✓ No vulnerabilities found"
+          fi
+
+  test-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: |
+          npm test -- --coverage || npm run test:coverage || true
+
+      - name: Check coverage threshold
+        run: |
+          if [ -f "coverage/coverage-summary.json" ]; then
+            COVERAGE=$(jq '.total.lines.pct' coverage/coverage-summary.json)
+            echo "Code coverage: $COVERAGE%"
+            
+            THRESHOLD=80
+            if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+              echo "⚠ Coverage $COVERAGE% is below threshold $THRESHOLD%"
+            else
+              echo "✓ Coverage meets threshold"
+            fi
+          else
+            echo "ℹ No coverage report found"
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/

@@ -1,0 +1,273 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gateway-global-ai.com/schemas/tool-registry.json",
+  "title": "Tool Registry Schema",
+  "description": "Schema for managing tool metadata, privileges, and configurations in Gateway Global AI Platform",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["version", "tools"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Version of the tool registry schema",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last update"
+    },
+    "tools": {
+      "type": "array",
+      "description": "Array of registered tools",
+      "items": {
+        "$ref": "#/definitions/Tool"
+      }
+    }
+  },
+  "definitions": {
+    "Tool": {
+      "type": "object",
+      "required": ["id", "name", "category", "version", "status", "provider", "privileges"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the tool",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable tool name",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of tool functionality",
+          "maxLength": 500
+        },
+        "category": {
+          "type": "string",
+          "description": "Tool category",
+          "enum": [
+            "search",
+            "location",
+            "mapping",
+            "communication",
+            "identity",
+            "ai-model",
+            "data-processing",
+            "integration",
+            "admin",
+            "monitoring"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "description": "Tool version",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the tool",
+          "enum": ["active", "deprecated", "beta", "experimental", "disabled"]
+        },
+        "provider": {
+          "type": "object",
+          "description": "Provider information",
+          "required": ["name", "type"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Provider name (e.g., Google, Twilio, Custom)",
+              "enum": ["google", "twilio", "firebase", "vertex-ai", "gemini", "custom"]
+            },
+            "type": {
+              "type": "string",
+              "description": "Provider type",
+              "enum": ["external-api", "internal-service", "mcp-server", "ai-model"]
+            },
+            "apiVersion": {
+              "type": "string",
+              "description": "API version used"
+            },
+            "endpoint": {
+              "type": "string",
+              "description": "Base endpoint URL",
+              "format": "uri"
+            }
+          }
+        },
+        "privileges": {
+          "type": "object",
+          "description": "Access control and privilege settings",
+          "required": ["requiredRoles", "scopes"],
+          "properties": {
+            "requiredRoles": {
+              "type": "array",
+              "description": "Roles required to use this tool",
+              "items": {
+                "type": "string",
+                "enum": ["admin", "developer", "agent", "user", "guest"]
+              },
+              "minItems": 1
+            },
+            "scopes": {
+              "type": "array",
+              "description": "OAuth scopes or permission scopes required",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rateLimit": {
+              "type": "object",
+              "description": "Rate limiting configuration",
+              "properties": {
+                "requests": {
+                  "type": "integer",
+                  "description": "Number of requests allowed",
+                  "minimum": 1
+                },
+                "period": {
+                  "type": "string",
+                  "description": "Time period for rate limit",
+                  "enum": ["second", "minute", "hour", "day"]
+                }
+              }
+            },
+            "costTier": {
+              "type": "string",
+              "description": "Cost tier for usage tracking",
+              "enum": ["free", "low", "medium", "high", "enterprise"]
+            }
+          }
+        },
+        "configuration": {
+          "type": "object",
+          "description": "Tool-specific configuration",
+          "properties": {
+            "environment": {
+              "type": "object",
+              "description": "Environment-specific settings",
+              "properties": {
+                "dev": {
+                  "$ref": "#/definitions/EnvironmentConfig"
+                },
+                "stag": {
+                  "$ref": "#/definitions/EnvironmentConfig"
+                },
+                "prod": {
+                  "$ref": "#/definitions/EnvironmentConfig"
+                }
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Default parameters for the tool",
+              "additionalProperties": true
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Timeout in milliseconds",
+              "minimum": 100,
+              "maximum": 300000
+            },
+            "retryPolicy": {
+              "type": "object",
+              "properties": {
+                "maxRetries": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "backoffMs": {
+                  "type": "integer",
+                  "minimum": 100
+                }
+              }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata",
+          "properties": {
+            "documentation": {
+              "type": "string",
+              "description": "URL to documentation",
+              "format": "uri"
+            },
+            "repository": {
+              "type": "string",
+              "description": "Source code repository URL",
+              "format": "uri"
+            },
+            "maintainer": {
+              "type": "string",
+              "description": "Maintainer name or team"
+            },
+            "tags": {
+              "type": "array",
+              "description": "Searchable tags",
+              "items": {
+                "type": "string"
+              }
+            },
+            "geminiStudioCompatible": {
+              "type": "boolean",
+              "description": "Whether tool is compatible with Gemini AI Studio export"
+            },
+            "mcpCompliant": {
+              "type": "boolean",
+              "description": "Whether tool follows MCP (Model Context Protocol) standards"
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "Other tools this tool depends on",
+          "items": {
+            "type": "string",
+            "description": "Tool ID of dependency"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of tool registration"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last update"
+        }
+      }
+    },
+    "EnvironmentConfig": {
+      "type": "object",
+      "description": "Environment-specific configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether tool is enabled in this environment"
+        },
+        "apiKey": {
+          "type": "string",
+          "description": "Environment variable name for API key"
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "Environment-specific endpoint",
+          "format": "uri"
+        },
+        "features": {
+          "type": "object",
+          "description": "Feature flags for this environment",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
