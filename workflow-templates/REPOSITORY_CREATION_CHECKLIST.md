@@ -303,17 +303,19 @@ For the `gateway-platform` repository specifically:
 
 - [ ] Create complete directory structure as per GATEWAY_PLATFORM_STRUCTURE.md
 - [ ] Implement MCP Server skeleton
-- [ ] Set up all five base tools:
+- [ ] Set up all six base tools:
   - [ ] Gemini Search
   - [ ] Google Places Grounding Lite
   - [ ] Google Places API
   - [ ] Google Maps JavaScript
   - [ ] Google Maps UI Kit
+  - [ ] Google Workspace (Gmail, Calendar, Drive, Docs, Sheets, Tasks)
 - [ ] Create admin panel foundation
 - [ ] Implement user management system
 - [ ] Set up agent configuration system
 - [ ] Configure Firebase integration
 - [ ] Configure Vertex AI integration
+- [ ] Configure Google Workspace integration
 - [ ] Create tool registry with all required tools
 - [ ] Set up memory system architecture
 - [ ] Implement personality framework

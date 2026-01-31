@@ -30,10 +30,11 @@ Our unified, enterprise-grade TypeScript platform that consolidates:
 1. **Gemini Search** - AI-powered search with grounding
 2. **Google Places Integration** - Location-based context
 3. **Google Maps** - Interactive mapping and UI components
-4. **Identity Verification** - Secure user authentication
-5. **Telephony AI** - Voice interaction capabilities
+4. **Google Workspace** - Productivity suite (Gmail, Calendar, Drive, Docs, Sheets, Tasks)
+5. **Identity Verification** - Secure user authentication
+6. **Telephony AI** - Voice interaction capabilities
 
-## Repository Structure
+### 📦 Repository Structure
 
 ### Primary Repositories
 
@@ -52,6 +53,15 @@ Organization governance and standards:
 - Architecture guides
 - Tool registry schema
 - Migration documentation
+
+#### [workspace](https://github.com/gateway-global-ai/workspace)
+Google Workspace MCP Server integration:
+- Gmail integration for communications
+- Calendar management for scheduling
+- Drive for file storage and management
+- Docs and Sheets for document creation
+- Task management
+- **Platform Economics**: Leveraging Google's infrastructure instead of building custom solutions
 
 ### Legacy Repositories (Being Consolidated)
 

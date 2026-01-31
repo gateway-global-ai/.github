@@ -146,11 +146,23 @@ repository-name/
 3. Google Places API
 4. Google Maps JavaScript
 5. Google Maps UI Kit
+6. Google Workspace (Gmail, Calendar, Drive, Docs, Sheets, Tasks)
 
 **Tool Registry:**
 - All tools must be registered in `tool-registry.json`
 - Follow Tool Registry JSON schema
 - Include metadata, privileges, and configurations
+
+### Platform Economics Approach
+
+Following platform economics principles, we leverage Google Workspace's existing MCP server infrastructure rather than building custom solutions for:
+- Email communication and notifications
+- Calendar and scheduling management
+- Document creation and collaboration
+- File storage and management
+- Task tracking and organization
+
+This approach reduces development costs, accelerates time-to-market, and provides enterprise-grade reliability for essential business functions that agents need to manage itineraries and other workflows.
 
 ### Admin/Control Panel
 

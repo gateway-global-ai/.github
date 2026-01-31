@@ -306,6 +306,95 @@ This file provides example tool registrations based on the Tool Registry Schema 
       "dependencies": ["google-maps-javascript"],
       "createdAt": "2026-01-31T04:00:00.000Z",
       "updatedAt": "2026-01-31T04:00:00.000Z"
+    },
+    {
+      "id": "google-workspace",
+      "name": "Google Workspace",
+      "description": "Comprehensive Google Workspace integration providing access to Gmail, Calendar, Drive, Docs, Sheets, and more through MCP server",
+      "category": "integration",
+      "version": "1.0.0",
+      "status": "active",
+      "provider": {
+        "name": "google",
+        "type": "mcp-server",
+        "apiVersion": "v1",
+        "endpoint": "https://www.googleapis.com/workspace"
+      },
+      "privileges": {
+        "requiredRoles": ["user", "agent", "developer", "admin"],
+        "scopes": [
+          "https://www.googleapis.com/auth/gmail.readonly",
+          "https://www.googleapis.com/auth/gmail.send",
+          "https://www.googleapis.com/auth/calendar",
+          "https://www.googleapis.com/auth/drive",
+          "https://www.googleapis.com/auth/documents",
+          "https://www.googleapis.com/auth/spreadsheets"
+        ],
+        "rateLimit": {
+          "requests": 100,
+          "period": "minute"
+        },
+        "costTier": "medium"
+      },
+      "configuration": {
+        "environment": {
+          "dev": {
+            "enabled": true,
+            "apiKey": "GOOGLE_WORKSPACE_API_KEY_DEV",
+            "features": {
+              "gmail": true,
+              "calendar": true,
+              "drive": true,
+              "docs": true,
+              "sheets": true,
+              "tasks": true
+            }
+          },
+          "stag": {
+            "enabled": true,
+            "apiKey": "GOOGLE_WORKSPACE_API_KEY_STAG",
+            "features": {
+              "gmail": true,
+              "calendar": true,
+              "drive": true,
+              "docs": true,
+              "sheets": true,
+              "tasks": true
+            }
+          },
+          "prod": {
+            "enabled": true,
+            "apiKey": "GOOGLE_WORKSPACE_API_KEY_PROD",
+            "features": {
+              "gmail": true,
+              "calendar": true,
+              "drive": true,
+              "docs": true,
+              "sheets": true,
+              "tasks": true
+            }
+          }
+        },
+        "parameters": {
+          "defaultCalendarId": "primary",
+          "maxEmailResults": 50
+        },
+        "timeout": 30000,
+        "retryPolicy": {
+          "maxRetries": 3,
+          "backoffMs": 1000
+        }
+      },
+      "metadata": {
+        "documentation": "https://developers.google.com/workspace",
+        "repository": "https://github.com/gateway-global-ai/workspace",
+        "maintainer": "Gateway Global AI Platform Team",
+        "tags": ["workspace", "gmail", "calendar", "drive", "docs", "sheets", "productivity"],
+        "geminiStudioCompatible": true,
+        "mcpCompliant": true
+      },
+      "createdAt": "2026-01-31T04:00:00.000Z",
+      "updatedAt": "2026-01-31T05:40:00.000Z"
     }
   ]
 }
@@ -313,13 +402,14 @@ This file provides example tool registrations based on the Tool Registry Schema 
 
 ## Usage
 
-This example demonstrates how to register the five required MCP Server base tools:
+This example demonstrates how to register the six required MCP Server base tools:
 
 1. **Gemini Search** - AI-powered search with grounding
 2. **Google Places Grounding Lite** - Lightweight location grounding
 3. **Google Places API** - Full location search and details
 4. **Google Maps JavaScript** - Interactive mapping
 5. **Google Maps UI Kit** - React UI components
+6. **Google Workspace** - Comprehensive productivity suite (Gmail, Calendar, Drive, Docs, Sheets, Tasks)
 
 Each tool includes:
 - Complete metadata and versioning
@@ -328,3 +418,15 @@ Each tool includes:
 - Rate limiting and cost tracking
 - Gemini AI Studio compatibility flags
 - MCP compliance indicators
+
+## Platform Economics Principle
+
+The inclusion of Google Workspace exemplifies the platform economics strategy of leveraging existing platforms and resources before building custom infrastructure. By integrating Google Workspace's MCP server, we gain access to:
+
+- **Email Communication** (Gmail) - Essential for agent notifications and communications
+- **Calendar Management** - Critical for scheduling and itinerary management
+- **Document Management** (Docs, Sheets) - For creating and managing business documents
+- **File Storage** (Drive) - Centralized file management
+- **Task Management** - For tracking and organizing work
+
+This approach allows agents to manage itineraries, schedule events, send communications, and handle business functions without requiring custom-built infrastructure for each capability.

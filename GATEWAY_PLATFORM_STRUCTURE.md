@@ -40,6 +40,7 @@ gateway-platform/
 │   │   │   ├── gemini-search/
 │   │   │   ├── google-places/
 │   │   │   ├── google-maps/
+│   │   │   ├── google-workspace/ # Gmail, Calendar, Drive, Docs, Sheets, Tasks
 │   │   │   ├── identity/
 │   │   │   └── telephony/
 │   │   ├── schemas/            # Tool schemas
@@ -48,6 +49,7 @@ gateway-platform/
 │   ├── integrations/            # External service integrations
 │   │   ├── firebase/           # Firebase integration
 │   │   ├── gemini/             # Gemini AI integration
+│   │   ├── workspace/          # Google Workspace integration
 │   │   ├── serp/               # SERP API integration
 │   │   ├── twilio/             # Twilio integration
 │   │   └── vertex-ai/          # Vertex AI integration

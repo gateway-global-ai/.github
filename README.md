@@ -48,7 +48,7 @@ Our unified, enterprise-grade TypeScript platform that consolidates:
 - **AI Agents**: Memory-enabled agents with DISC personalities
 - **MCP Server**: Model Context Protocol with extensible tools
 - **Admin Panel**: React-based management interface
-- **Core Tools**: Gemini Search, Google Places, Google Maps, Identity, Telephony
+- **Core Tools**: Gemini Search, Google Places, Google Maps, Google Workspace, Identity, Telephony
 - **Infrastructure**: Firebase, Vertex AI, environment separation (dev/stag/prod)
 
 ## 🛠️ Technology Stack
